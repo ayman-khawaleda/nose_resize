@@ -41,12 +41,12 @@ class NoseResizeTool(FaceTool):
             face_upper[1] : face_lower[1], face_upper[0] : face_lower[0], :
         ].copy()
         self.image[nose_p[1], nose_p[0], :] = (255, 0, 0)
-        self.face2 = self.image[
+        face2 = self.image[
             face_upper[1] : face_lower[1], face_upper[0] : face_lower[0], :
         ].copy()
         h, w = face.shape[0], face.shape[1]
         self.radius = 170 if h > 800 or w > 800 else 45
-        self.nose_p = self.__detect_nose_tip(self.face2)
+        self.nose_p = self.__detect_nose_tip(face2)
         self.__create_index_map(h, w)
         self.__edit_nose_area()
         self.__smothe_border()
@@ -90,9 +90,11 @@ class NoseResizeTool(FaceTool):
                         self.nose_p[0] - (-j / self.radius) ** self.power * self.radius
                     )
 
-    def __smothe_border(self,k=(5,5),xspace=10,yspace=10,sigmax=0,sigmay=0):
+    def __smothe_border(self,k=(5,5),xspace=10,yspace=10,sigmax=0):
         y,x = self.nose_p
         r = self.radius
         lU = [y-r-yspace,x-r-xspace] #Left Upper
         rL = [y+r+yspace,x+r+xspace] #Right Lower
         self.nose_map_x[lU[1]:rL[1],lU[0]:rL[0]] = cv2.GaussianBlur(self.nose_map_x[lU[1]:rL[1],lU[0]:rL[0]].copy(),k,sigmax)
+        self.nose_map_y[lU[1]:rL[1],lU[0]:rL[0]] = cv2.GaussianBlur(self.nose_map_y[lU[1]:rL[1],lU[0]:rL[0]].copy(),k,sigmax)
+        
