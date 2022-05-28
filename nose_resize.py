@@ -24,6 +24,8 @@ class NoseResizeTool(FaceTool):
             self.image = cv2.cvtColor(cv2.imread(kwargs["File"]), cv2.COLOR_BGR2RGB)
         if "Radius" in kwargs:
             self.radius = kwargs["Radius"]
+        else:
+            self.radius = 170 if h > 800 or w > 800 else 45
         self.power = size
         results = self.faceDetector.process(self.image)
         if not results:
@@ -43,3 +45,17 @@ class NoseResizeTool(FaceTool):
 
         self.image[nose_p[1], nose_p[0], :] = (255, 0, 0)
         face2 = face.copy()
+        h,w = face.shape[0] ,face.shape[1]
+        nose_p = self.detect_nose_tip(face2)
+
+        
+    def detect_nose_tip(self,subface):
+        indx = np.where(subface[:,:,0] == 255)
+        p = 0
+        for x,y in zip(indx[0],indx[1]):
+            r,g,b = subface[x,y,:]
+            if r == 255 and g == 0 and b == 0:
+                p = (y,x)
+        if p == 0:
+            raise Exception("No Nose Point found for face")
+        return p
