@@ -15,3 +15,4 @@ if __name__ == '__main__':
     nrt = NoseResizeTool(IMAGE_FILES[0],face_detecation)
     nrt.apply(0.8)
     nrt.show_result()
+
