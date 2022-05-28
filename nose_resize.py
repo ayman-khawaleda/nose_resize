@@ -10,6 +10,12 @@ matplotlib.use("GTK4Agg")
 
 class NoseResizeTool(FaceTool):
     def __init__(self, img_path, faceDetector):
+        """Image After Call Apply Will be in self.image
+
+        Args:
+            img_path (String): The Path of Image
+            faceDetector (FaceDetaction): MediaPipe Moudle
+        """
         self.img_path = img_path
         self.faceDetector = faceDetector
         self.image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
@@ -20,7 +26,7 @@ class NoseResizeTool(FaceTool):
         \nk: Is For The Kernal of Gaussian Blur
         \nkwargs:
             \nFile: Path For The Image To Be Modifed.
-            \nRadius: The Region Around The Eye Where All Processing Are Done.
+            \nRadius: The Region Around The Nose Where All Processing Are Done.
         """
         if "File" in kwargs:
             self.image = cv2.cvtColor(cv2.imread(kwargs["File"]), cv2.COLOR_BGR2RGB)
@@ -112,3 +118,6 @@ class NoseResizeTool(FaceTool):
             face_upper[1] : face_lower[1], face_upper[0] : face_lower[0], :
         ] = warped
 
+    def show_result(self,axis=1):
+        plt.imshow(np.concatenate((self.image, self.orig), axis=axis))
+        plt.show()

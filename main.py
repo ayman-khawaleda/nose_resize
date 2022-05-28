@@ -12,5 +12,6 @@ if __name__ == '__main__':
     face_detecation = mp_face_detecation.FaceDetection(
         model_selection=1, min_detection_confidence=0.5
     )
-    nrt = NoseResizeTool(IMAGE_FILES[3],face_detecation)
-    nrt.apply()
+    nrt = NoseResizeTool(IMAGE_FILES[0],face_detecation)
+    nrt.apply(0.8)
+    nrt.show_result()
