@@ -2,9 +2,9 @@ from Tool import FaceTool
 import cv2
 import numpy as np
 
-# import matplotlib
-# import matplotlib.pyplot as plt
-# matplotlib.use("GTK4Agg")
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use("GTK4Agg")
 
 
 class NoseResizeTool(FaceTool):
@@ -24,8 +24,6 @@ class NoseResizeTool(FaceTool):
             self.image = cv2.cvtColor(cv2.imread(kwargs["File"]), cv2.COLOR_BGR2RGB)
         if "Radius" in kwargs:
             self.radius = kwargs["Radius"]
-        else:
-            self.radius = 170 if h > 800 or w > 800 else 45
         self.power = size
         results = self.faceDetector.process(self.image)
         if not results:
@@ -42,25 +40,59 @@ class NoseResizeTool(FaceTool):
         face = self.image[
             face_upper[1] : face_lower[1], face_upper[0] : face_lower[0], :
         ].copy()
-
         self.image[nose_p[1], nose_p[0], :] = (255, 0, 0)
-        face2 = face.copy()
-        h,w = face.shape[0] ,face.shape[1]
-        nose_p = self.detect_nose_tip(face2)
-        self.creat_index_map(h,w)
-        
-    def detect_nose_tip(self,subface):
-        indx = np.where(subface[:,:,0] == 255)
+        self.face2 = self.image[
+            face_upper[1] : face_lower[1], face_upper[0] : face_lower[0], :
+        ].copy()
+        h, w = face.shape[0], face.shape[1]
+        self.radius = 170 if h > 800 or w > 800 else 45
+        self.nose_p = self.__detect_nose_tip(self.face2)
+        self.__create_index_map(h, w)
+        self.__edit_nose_area()
+        self.__smothe_border()
+
+    def __detect_nose_tip(self, subface):
+        indx = np.where(subface[:, :, 0] == 255)
         p = 0
-        for x,y in zip(indx[0],indx[1]):
-            r,g,b = subface[x,y,:]
+        for x, y in zip(indx[0], indx[1]):
+            r, g, b = subface[x, y, :]
             if r == 255 and g == 0 and b == 0:
-                p = (y,x)
-        if p == 0:
-            raise Exception("No Nose Point found for face")
+                p = np.array([y, x])
+        if type(p) is int:
+            if p == 0:
+                raise Exception("No Nose Point found for face")
         return p
 
-    def create_index_map(self, h, w):
-        xs = np.arange(0,h,1,dtype=np.float32)
-        ys = np.arange(0,w,1,dtype=np.float32)
-        self.nose_map_x, self.nose_map_y = np.meshgrid(xs,ys)
+    def __create_index_map(self, h, w):
+        xs = np.arange(0, h, 1, dtype=np.float32)
+        ys = np.arange(0, w, 1, dtype=np.float32)
+        self.nose_map_x, self.nose_map_y = np.meshgrid(xs, ys)
+
+    def __edit_nose_area(self):
+        for i in range(-self.radius, self.radius):
+            for j in range(-self.radius, self.radius):
+                if i**2 + j**2 > self.radius**2:
+                    continue
+                if i > 0:
+                    self.nose_map_y[self.nose_p[1] + i][self.nose_p[0] + j] = (
+                        self.nose_p[1] + (i / self.radius) ** self.power * self.radius
+                    )
+                if i < 0:
+                    self.nose_map_y[self.nose_p[1] + i][self.nose_p[0] + j] = (
+                        self.nose_p[1] - (-i / self.radius) ** self.power * self.radius
+                    )
+                if j > 0:
+                    self.nose_map_x[self.nose_p[1] + i][self.nose_p[0] + j] = (
+                        self.nose_p[0] + (j / self.radius) ** self.power * self.radius
+                    )
+                if j < 0:
+                    self.nose_map_x[self.nose_p[1] + i][self.nose_p[0] + j] = (
+                        self.nose_p[0] - (-j / self.radius) ** self.power * self.radius
+                    )
+
+    def __smothe_border(self,k=(5,5),xspace=10,yspace=10,sigmax=0,sigmay=0):
+        y,x = self.nose_p
+        r = self.radius
+        lU = [y-r-yspace,x-r-xspace] #Left Upper
+        rL = [y+r+yspace,x+r+xspace] #Right Lower
+        self.nose_map_x[lU[1]:rL[1],lU[0]:rL[0]] = cv2.GaussianBlur(self.nose_map_x[lU[1]:rL[1],lU[0]:rL[0]].copy(),k,sigmax)
