@@ -47,7 +47,7 @@ class NoseResizeTool(FaceTool):
         face2 = face.copy()
         h,w = face.shape[0] ,face.shape[1]
         nose_p = self.detect_nose_tip(face2)
-
+        self.creat_index_map(h,w)
         
     def detect_nose_tip(self,subface):
         indx = np.where(subface[:,:,0] == 255)
@@ -59,3 +59,8 @@ class NoseResizeTool(FaceTool):
         if p == 0:
             raise Exception("No Nose Point found for face")
         return p
+
+    def create_index_map(self, h, w):
+        xs = np.arange(0,h,1,dtype=np.float32)
+        ys = np.arange(0,w,1,dtype=np.float32)
+        self.nose_map_x, self.nose_map_y = np.meshgrid(xs,ys)
